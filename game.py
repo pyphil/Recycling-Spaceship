@@ -60,8 +60,9 @@ def startscreen(result=None):
             # check button press
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if button.collidepoint(event.pos):
-                    starting = False
-                    play(user_text)
+                    if user_text != "":
+                        starting = False
+                        play(user_text)
 
             # input
             if event.type == pygame.KEYDOWN:
@@ -69,6 +70,11 @@ def startscreen(result=None):
                 if event.key == pygame.K_BACKSPACE:
                     # get text input from 0 to -1 i.e. end.
                     user_text = user_text[:-1]
+                # remove Enter/Return-Key char
+                elif event.key == pygame.K_RETURN:
+                    if user_text != "":
+                        starting = False
+                        play(user_text)
                 # Unicode standard is used for string formation
                 else:
                     user_text += event.unicode
@@ -104,6 +110,8 @@ def play(user):
 
     # load and position spaceship
     spaceship = pygame.image.load("spaceship.png")
+    asteroid = pygame.image.load("asteroid.png")
+    asteroid_pos = asteroid.get_rect()
     spaceship_pos = spaceship.get_rect()
     spaceship_pos.center = screen.get_width() / 2, screen.get_height() / 2
 
@@ -120,6 +128,7 @@ def play(user):
     object_2_vel = get_random_velocity()
     object_3_vel = get_random_velocity()
     object_4_vel = get_random_velocity()
+    asteroid_vel = get_random_velocity()
 
     running = True
     points = 0
@@ -140,9 +149,10 @@ def play(user):
         screen.blit(spaceship, spaceship_pos)
         # player = pygame.draw.circle(screen, "red", player_pos, 40)
         object_1 = pygame.draw.circle(screen, "green", object_1_pos, 10)
-        object_2 = pygame.draw.circle(screen, "black", object_2_pos, 10)
-        object_3 = pygame.draw.circle(screen, "black", object_3_pos, 10)
-        object_4 = pygame.draw.circle(screen, "black", object_4_pos, 10)
+        object_2 = pygame.draw.circle(screen, "red", object_2_pos, 10)
+        object_3 = pygame.draw.circle(screen, "red", object_3_pos, 10)
+        object_4 = pygame.draw.circle(screen, "red", object_4_pos, 10)
+        asteroid_obj = screen.blit(asteroid, asteroid_pos)
 
         # let objects come down and set new position and velocity when they
         # reach the bottom
@@ -162,6 +172,10 @@ def play(user):
         if object_4_pos.y > 720:
             object_4_pos = pygame.Vector2(randint(5, 1275), 0)
             object_4_vel = get_random_velocity(points)
+        asteroid_pos.y += asteroid_vel
+        if asteroid_pos.y > 720:
+            asteroid_pos.center = randint(5, 1275), 0
+            asteroid_vel = get_random_velocity(points)
 
         # keys = pygame.key.get_pressed()
         # if keys[pygame.K_UP]:
@@ -173,25 +187,29 @@ def play(user):
         # if keys[pygame.K_RIGHT] and player_pos.x <= screen.get_width() - player.width:
         #     player_pos.x += PLAYER_VELOCITY
 
+        # Follow Mouse
+        # spaceship_pos.x = pygame.mouse.get_pos()[0]
+        # spaceship_pos.y = pygame.mouse.get_pos()[1]
+
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_UP]:
+        if keys[pygame.K_UP] and spaceship_pos.y >= 0:
             spaceship_pos.y -= PLAYER_VELOCITY
-        if keys[pygame.K_DOWN]:
+        if keys[pygame.K_DOWN] and spaceship_pos.y <= screen.get_height() - spaceship.get_rect().height:
             spaceship_pos.y += PLAYER_VELOCITY
-        if keys[pygame.K_LEFT]:
+        if keys[pygame.K_LEFT] and spaceship_pos.x >= 0:
             spaceship_pos.x -= PLAYER_VELOCITY
-        if keys[pygame.K_RIGHT]:   # and spaceship_pos.x <= screen.get_width() - spaceship.get_rect().width:
+        if keys[pygame.K_RIGHT] and spaceship_pos.x <= screen.get_width() - spaceship.get_rect().width:
             spaceship_pos.x += PLAYER_VELOCITY
 
-        # let spaceship come in on the other side of the screen
-        if spaceship_pos.x >= screen.get_width() - spaceship.get_rect().width:
-            spaceship_pos.x = 0
-        if spaceship_pos.x < 0:
-            spaceship_pos.x = screen.get_width() - spaceship.get_rect().width
-        if spaceship_pos.y >= screen.get_height() - spaceship.get_rect().height:
-            spaceship_pos.y = 0
-        if spaceship_pos.y < 0:
-            spaceship_pos.y = screen.get_height() - spaceship.get_rect().height
+        # let spaceship come in on the other side of the screen (also remove 'and' operator in sequence above)
+        # if spaceship_pos.x >= screen.get_width() - spaceship.get_rect().width:
+        #     spaceship_pos.x = 0
+        # if spaceship_pos.x < 0:
+        #     spaceship_pos.x = screen.get_width() - spaceship.get_rect().width
+        # if spaceship_pos.y >= screen.get_height() - spaceship.get_rect().height:
+        #     spaceship_pos.y = 0
+        # if spaceship_pos.y < 0:
+        #     spaceship_pos.y = screen.get_height() - spaceship.get_rect().height
 
         # if object_1.colliderect(player):
         #     points += 1
@@ -206,7 +224,7 @@ def play(user):
         #     screen.blit(feedback, (screen.get_width()/2, screen.get_height()/2))
         #     running = False
 
-        if object_2.colliderect(spaceship_pos) or object_3.colliderect(spaceship_pos) or object_4.colliderect(spaceship_pos):
+        if object_2.colliderect(spaceship_pos) or object_3.colliderect(spaceship_pos) or object_4.colliderect(spaceship_pos) or asteroid_obj.colliderect(spaceship_pos):
             with open('score', 'a') as f:
                 if points < 10:
                     f.write(f'0{points} - {user}\n')
